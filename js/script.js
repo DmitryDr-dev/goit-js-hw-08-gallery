@@ -1,58 +1,92 @@
-// - Создание и рендер разметки по массиву данных `galleryItems` из `app.js` и
-//   предоставленному шаблону.
-// - Реализация делегирования на галерее `ul.js-gallery` и получение `url` большого
-//   изображения.
-// - Открытие модального окна по клику на элементе галереи.
-// - Подмена значения атрибута `src` элемента `img.lightbox__image`.
-// - Закрытие модального окна по клику на кнопку
-//   `button[data-action="close-lightbox"]`.
-// - Очистка значения атрибута `src` элемента `img.lightbox__image`. Это необходимо
-//   для того, чтобы при следующем открытии модального окна, пока грузится
-//   изображение, мы не видели предыдущее.
+// done 1 Создание и рендер разметки по массиву данных `galleryItems` из `app.js` и предоставленному шаблону.
+// done 2 Реализация делегирования на галерее `ul.js-gallery` и получение `url` большого изображения.
+// done 3 Открытие модального окна по клику на элементе галереи.
+// done 4 Подмена значения атрибута `src` элемента `img.lightbox__image`.
+// done 5 Закрытие модального окна по клику на кнопку `button[data-action="close-lightbox"]`.
+// done 6 Очистка значения атрибута `src` элемента `img.lightbox__image`. Это необходимо для того, чтобы при следующем открытии модального окна, пока грузится изображение, мы не видели предыдущее.
 
 import images from './app.js';
 
-const createGalleryMarkup = array => {
-  const galleryItemsList = [];
-
-  array.map(
+function createGalleryMarkup(node, array) {
+  const galleryMarkup = array.map(
     ({
-      preview: smallImage,
-      original: bigImage,
+      preview: smallImageSrc,
+      original: bigImageSrc,
       description: imageDescription,
     }) => {
-      const galleryItemEl = document.createElement('li');
-      galleryItemEl.classList.add('gallery__item');
+      const listItemEl = document.createElement('li');
+      listItemEl.classList.add('gallery__item');
 
-      const galleryLinkEl = document.createElement('a');
-      galleryLinkEl.classList.add('gallery__link');
-      galleryLinkEl.href = bigImage;
+      const linkEl = document.createElement('a');
+      linkEl.classList.add('gallery__link');
+      linkEl.href = bigImageSrc;
 
-      const galleryImageEl = document.createElement('img');
-      galleryImageEl.classList.add('gallery__image');
-      galleryImageEl.src = smallImage;
-      galleryImageEl.dataset.source = bigImage;
-      galleryImageEl.alt = imageDescription;
+      const imageEl = document.createElement('img');
+      imageEl.classList.add('gallery__image');
+      imageEl.src = smallImageSrc;
+      imageEl.dataset.source = bigImageSrc;
+      imageEl.alt = imageDescription;
 
-      galleryItemEl.append(galleryLinkEl, galleryImageEl);
+      linkEl.appendChild(imageEl);
+      listItemEl.appendChild(linkEl);
 
-      galleryItemsList.push(galleryItemEl);
+      return listItemEl;
     }
   );
 
-  return galleryItemsList;
-};
+  node.append(...galleryMarkup);
+}
 
-/* <li class="gallery__item">
-  <a
-    class="gallery__link"
-    href="https://cdn.pixabay.com/photo/2010/12/13/10/13/tulips-2546_1280.jpg"
-  >
-    <img
-      class="gallery__image"
-      src="https://cdn.pixabay.com/photo/2010/12/13/10/13/tulips-2546__340.jpg"
-      data-source="https://cdn.pixabay.com/photo/2010/12/13/10/13/tulips-2546_1280.jpg"
-      alt="Tulips"
-    />
-  </a>
-</li> */
+const galleryEl = document.querySelector('.js-gallery');
+const lightboxEl = document.querySelector('.js-lightbox');
+const lightboxCloseBtnEl = document.querySelector(
+  'button[data-action="close-lightbox"]'
+);
+const lightboxBigImageEl = document.querySelector('.lightbox__image');
+const lightboxOverlayEl = document.querySelector('.lightbox__overlay');
+
+createGalleryMarkup(galleryEl, images);
+
+function onImageClick(e) {
+  const isSmallImage = e.target.classList.contains('gallery__image');
+
+  if (!isSmallImage) {
+    return;
+  }
+
+  const bigImageSrc = e.target.dataset.source;
+  const bigImageAlt = e.target.alt;
+
+  lightboxBigImageEl.setAttribute('src', bigImageSrc);
+  lightboxBigImageEl.setAttribute('alt', bigImageAlt);
+
+  onOpenModal(e);
+}
+
+function onOpenModal(e) {
+  e.preventDefault();
+  lightboxEl.classList.add('is-open');
+
+  window.addEventListener('keydown', onEscapeKeypress);
+}
+
+function onCloseModal() {
+  lightboxEl.classList.remove('is-open');
+
+  lightboxBigImageEl.removeAttribute('src');
+  lightboxBigImageEl.removeAttribute('alt');
+}
+
+function onEscapeKeypress(e) {
+  const ESC_KEY_CODE = 'Escape';
+
+  if (e.code !== ESC_KEY_CODE) {
+    return;
+  }
+
+  onCloseModal();
+}
+
+galleryEl.addEventListener('click', onImageClick);
+lightboxCloseBtnEl.addEventListener('click', onCloseModal);
+lightboxOverlayEl.addEventListener('click', onCloseModal);
