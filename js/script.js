@@ -47,6 +47,10 @@ const lightboxOverlayEl = document.querySelector('.lightbox__overlay');
 
 createGalleryMarkup(galleryEl, images);
 
+galleryEl.addEventListener('click', onImageClick);
+lightboxCloseBtnEl.addEventListener('click', onCloseModal);
+lightboxOverlayEl.addEventListener('click', onOverlayClose);
+
 function onImageClick(e) {
   const isSmallImage = e.target.classList.contains('gallery__image');
 
@@ -87,6 +91,10 @@ function onEscapeKeypress(e) {
   onCloseModal();
 }
 
-galleryEl.addEventListener('click', onImageClick);
-lightboxCloseBtnEl.addEventListener('click', onCloseModal);
-lightboxOverlayEl.addEventListener('click', onCloseModal);
+function onOverlayClose(e) {
+  if (e.target !== e.currentTarget) {
+    return;
+  }
+
+  onCloseModal();
+}
