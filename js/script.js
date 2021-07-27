@@ -72,6 +72,8 @@ function onOpenModal(e) {
   lightboxEl.classList.add('is-open');
 
   window.addEventListener('keydown', onEscapeKeypress);
+  window.addEventListener('keydown', onArrowRightPress);
+  window.addEventListener('keydown', onArrowLeftPress);
 }
 
 function onCloseModal() {
@@ -97,4 +99,46 @@ function onOverlayClose(e) {
   }
 
   onCloseModal();
+}
+
+function getImageIndex(targetedImage) {
+  const curentImage = targetedImage;
+  const curentImageSrc = curentImage.getAttribute('href');
+  let currentIndex = 0;
+
+  images.forEach((image, index) => {
+    if (image.original === curentImageSrc) {
+      currentIndex = index;
+    }
+  });
+
+  return currentIndex;
+}
+
+function onArrowRightPress(e) {
+  const ARROW_RIGHT = 'ArrowRight';
+
+  if (e.code !== ARROW_RIGHT) {
+    return;
+  }
+
+  let currentImageIndex = getImageIndex(e.target);
+  let nextImageIndex = currentImageIndex + 1;
+  let nextImageSrc = images[nextImageIndex].original;
+
+  lightboxBigImageEl.setAttribute('src', nextImageSrc);
+}
+
+function onArrowLeftPress(e) {
+  const ARROW_LEFT = 'ArrowLeft';
+
+  if (e.code !== ARROW_LEFT) {
+    return;
+  }
+
+  let currentImageIndex = getImageIndex(e.target);
+  let nextImageIndex = currentImageIndex - 1;
+  let nextImageSrc = images[nextImageIndex].original;
+
+  lightboxBigImageEl.setAttribute('src', nextImageSrc);
 }
