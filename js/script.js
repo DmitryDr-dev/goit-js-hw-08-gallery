@@ -1,144 +1,102 @@
-// done 1 Создание и рендер разметки по массиву данных `galleryItems` из `app.js` и предоставленному шаблону.
-// done 2 Реализация делегирования на галерее `ul.js-gallery` и получение `url` большого изображения.
-// done 3 Открытие модального окна по клику на элементе галереи.
-// done 4 Подмена значения атрибута `src` элемента `img.lightbox__image`.
-// done 5 Закрытие модального окна по клику на кнопку `button[data-action="close-lightbox"]`.
-// done 6 Очистка значения атрибута `src` элемента `img.lightbox__image`. Это необходимо для того, чтобы при следующем открытии модального окна, пока грузится изображение, мы не видели предыдущее.
+import galleryImages from './app.js';
 
-import images from './app.js';
+const refs = {
+  galleryList: document.querySelector('.js-gallery'),
+  modal: document.querySelector('.js-lightbox'),
+  modalImg: document.querySelector('.lightbox__image'),
+};
 
-function createGalleryMarkup(node, array) {
-  const galleryMarkup = array.map(
-    ({
-      preview: smallImageSrc,
-      original: bigImageSrc,
-      description: imageDescription,
-    }) => {
-      const listItemEl = document.createElement('li');
-      listItemEl.classList.add('gallery__item');
+let activeIndex = null;
 
-      const linkEl = document.createElement('a');
-      linkEl.classList.add('gallery__link');
-      linkEl.href = bigImageSrc;
-
-      const imageEl = document.createElement('img');
-      imageEl.classList.add('gallery__image');
-      imageEl.src = smallImageSrc;
-      imageEl.dataset.source = bigImageSrc;
-      imageEl.alt = imageDescription;
-
-      linkEl.appendChild(imageEl);
-      listItemEl.appendChild(linkEl);
-
-      return listItemEl;
-    }
-  );
-
-  node.append(...galleryMarkup);
-}
-
-const galleryEl = document.querySelector('.js-gallery');
-const lightboxEl = document.querySelector('.js-lightbox');
-const lightboxCloseBtnEl = document.querySelector(
-  'button[data-action="close-lightbox"]'
+const createGalleryMarkup = galleryImages.map(
+  ({ preview, original, description }) => {
+    return `
+  <li class="gallery__item">
+  <a
+    class="gallery__link"
+    href="${original}"
+    data-source="${original}"
+  >
+    <img
+      class="gallery__image"
+      src="${preview}"
+      data-source="${original}"
+      alt="${description}"
+    />
+  </a>
+</li>
+  `;
+  }
 );
-const lightboxBigImageEl = document.querySelector('.lightbox__image');
-const lightboxOverlayEl = document.querySelector('.lightbox__overlay');
 
-createGalleryMarkup(galleryEl, images);
+refs.galleryList.insertAdjacentHTML('beforeend', createGalleryMarkup.join(''));
+refs.galleryList.addEventListener('click', handleOpenModal);
+refs.modal.addEventListener('click', handleCloseModal);
+window.addEventListener('keydown', openImageByEnter);
 
-galleryEl.addEventListener('click', onImageClick);
-lightboxCloseBtnEl.addEventListener('click', onCloseModal);
-lightboxOverlayEl.addEventListener('click', onOverlayClose);
-
-function onImageClick(e) {
-  const isSmallImage = e.target.classList.contains('gallery__image');
-
-  if (!isSmallImage) {
-    return;
-  }
-
-  const bigImageSrc = e.target.dataset.source;
-  const bigImageAlt = e.target.alt;
-
-  lightboxBigImageEl.setAttribute('src', bigImageSrc);
-  lightboxBigImageEl.setAttribute('alt', bigImageAlt);
-
-  onOpenModal(e);
-}
-
-function onOpenModal(e) {
+function handleOpenModal(e) {
   e.preventDefault();
-  lightboxEl.classList.add('is-open');
 
-  window.addEventListener('keydown', onEscapeKeypress);
-  window.addEventListener('keydown', onArrowRightPress);
-  window.addEventListener('keydown', onArrowLeftPress);
-}
-
-function onCloseModal() {
-  lightboxEl.classList.remove('is-open');
-
-  lightboxBigImageEl.removeAttribute('src');
-  lightboxBigImageEl.removeAttribute('alt');
-}
-
-function onEscapeKeypress(e) {
-  const ESC_KEY_CODE = 'Escape';
-
-  if (e.code !== ESC_KEY_CODE) {
+  if (
+    !e.target.classList.contains('gallery__image') &&
+    !e.target.classList.contains('gallery__link')
+  ) {
     return;
   }
 
-  onCloseModal();
-}
-
-function onOverlayClose(e) {
-  if (e.target !== e.currentTarget) {
-    return;
-  }
-
-  onCloseModal();
-}
-
-function getImageIndex(targetedImage) {
-  const curentImage = targetedImage;
-  const curentImageSrc = curentImage.getAttribute('href');
-  let currentIndex = 0;
-
-  images.forEach((image, index) => {
-    if (image.original === curentImageSrc) {
-      currentIndex = index;
+  galleryImages.forEach((el, index) => {
+    if (el.original === e.target.dataset.source) {
+      activeIndex = index;
     }
   });
 
-  return currentIndex;
+  refs.modal.classList.add('is-open');
+  refs.modalImg.src = e.target.dataset.source;
+  refs.modalImg.alt = e.target.alt;
+
+  window.addEventListener('keydown', keyBoardManipulation);
 }
 
-function onArrowRightPress(e) {
-  const ARROW_RIGHT = 'ArrowRight';
-
-  if (e.code !== ARROW_RIGHT) {
+function handleCloseModal(e) {
+  if (e?.target.classList.contains('lightbox__image')) {
     return;
   }
 
-  let currentImageIndex = getImageIndex(e.target);
-  let nextImageIndex = currentImageIndex + 1;
-  let nextImageSrc = images[nextImageIndex].original;
-
-  lightboxBigImageEl.setAttribute('src', nextImageSrc);
+  refs.modal.classList.remove('is-open');
+  refs.modalImg.src = '';
+  refs.modalImg.alt = '';
 }
 
-function onArrowLeftPress(e) {
-  const ARROW_LEFT = 'ArrowLeft';
+function keyBoardManipulation(e) {
+  switch (e.key) {
+    case 'Escape':
+      handleCloseModal();
+      break;
+    case activeIndex < galleryImages.length - 1 && 'ArrowRight':
+      activeIndex += 1;
+      refs.modalImg.src = galleryImages[activeIndex].original;
+      break;
+    case activeIndex > 0 && 'ArrowLeft':
+      activeIndex -= 1;
+      refs.modalImg.src = galleryImages[activeIndex].original;
+      break;
+    case activeIndex === galleryImages.length - 1 && 'ArrowRight':
+      activeIndex = 0;
+      refs.modalImg.src = galleryImages[activeIndex].original;
+      break;
+    case activeIndex === 0 && 'ArrowLeft':
+      activeIndex = galleryImages.length - 1;
+      refs.modalImg.src = galleryImages[activeIndex].original;
+      break;
+    default:
+      break;
+  }
+}
 
-  if (e.code !== ARROW_LEFT) {
+function openImageByEnter(e) {
+  if (!e.target.classList.contains('gallery__link') || e.key !== 'Enter') {
     return;
   }
 
-  let currentImageIndex = getImageIndex(e.target);
-  let nextImageIndex = currentImageIndex - 1;
-  let nextImageSrc = images[nextImageIndex].original;
-
-  lightboxBigImageEl.setAttribute('src', nextImageSrc);
+  handleOpenModal(e);
 }
